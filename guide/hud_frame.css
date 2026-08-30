@@ -1,0 +1,428 @@
+/*
+ * Cadre HUD modulaire
+ * -------------------
+ * Les dimensions ci-dessous correspondent exactement aux PNG de
+ * assets/image/cadre. Les coins et les centres sont mis à l'échelle
+ * uniformément. Les edges sont étirés uniquement dans l'axe de leur longueur ;
+ * leur épaisseur reste pilotée par la même variable --frame-scale.
+ */
+
+.hud-frame {
+  /* API publique : 0.75, 1, 1.25, 1.5, etc. */
+  --frame-scale: 1;
+
+  /* Dimensions natives des coins. */
+  --hud-corner-tl-width: calc(120px * var(--frame-scale));
+  --hud-corner-tl-height: calc(177px * var(--frame-scale));
+  --hud-corner-tr-width: calc(120px * var(--frame-scale));
+  --hud-corner-tr-height: calc(177px * var(--frame-scale));
+  --hud-corner-bl-width: calc(183px * var(--frame-scale));
+  --hud-corner-bl-height: calc(212px * var(--frame-scale));
+  --hud-corner-br-width: calc(184px * var(--frame-scale));
+  --hud-corner-br-height: calc(212px * var(--frame-scale));
+
+  /* Épaisseur native des edges étirés. */
+  --hud-edge-top-height: calc(49px * var(--frame-scale));
+  --hud-edge-bottom-height: calc(49px * var(--frame-scale));
+  --hud-edge-left-width: calc(60px * var(--frame-scale));
+  --hud-edge-right-width: calc(60px * var(--frame-scale));
+  --hud-edge-seam-overlap: max(1px, calc(2px * var(--frame-scale)));
+
+  /* Dimensions natives des modules centraux. */
+  --hud-center-width: calc(266px * var(--frame-scale));
+  --hud-center-half-width: calc(133px * var(--frame-scale));
+  --hud-center-height: calc(49px * var(--frame-scale));
+
+  /*
+   * La fenêtre intérieure suit exactement les quatre edges :
+   * - décalage horizontal = largeur de l'edge correspondant ;
+   * - décalage vertical = 80 % de la hauteur de l'edge correspondant.
+   *
+   * Les 20 % restants sont volontairement chevauchés par la fenêtre afin
+   * d'absorber la bande transparente située vers l'intérieur des PNG haut/bas.
+   */
+  --hud-window-vertical-overlap: calc(9.8px * var(--frame-scale));
+  --hud-window-inset-top: calc(
+    var(--hud-edge-top-height) - var(--hud-window-vertical-overlap)
+  );
+  --hud-window-inset-right: var(--hud-edge-right-width);
+  --hud-window-inset-bottom: calc(
+    var(--hud-edge-bottom-height) - var(--hud-window-vertical-overlap)
+  );
+  --hud-window-inset-left: var(--hud-edge-left-width);
+
+  /* Alias conservés pour le mode de démonstration .hud-frame--clipped. */
+  --hud-content-inset-x: var(--hud-window-inset-left);
+  --hud-content-inset-y: var(--hud-window-inset-top);
+
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+}
+
+/*
+ * Taille fluide facultative
+ * -------------------------
+ * La largeur suit toujours le parent sans dépasser --frame-width.
+ * Définir ensuite soit --frame-aspect-ratio (vidéo, carte, panneau), soit
+ * --frame-height (chat vertical, colonne d'informations).
+ *
+ * Exemples :
+ *   --frame-width: 960px; --frame-aspect-ratio: 16 / 9;
+ *   --frame-width: 430px; --frame-height: clamp(360px, 72vh, 650px);
+ */
+.hud-frame--responsive {
+  container-name: hud-frame;
+  container-type: inline-size;
+  width: min(100%, var(--frame-width, 100%));
+  height: var(--frame-height, auto);
+  aspect-ratio: var(--frame-aspect-ratio, auto);
+}
+
+/*
+ * Règle unique d'intégration
+ * --------------------------
+ * Le cadre conserve la taille initiale de l'élément. La fenêtre visuelle
+ * injectée par hud_frame.js est réduite des quatre edges, tandis que le contenu
+ * reçoit les mêmes offsets en plus de son padding d'origine.
+ */
+[data-hud-frame].hud-frame {
+  padding:
+    calc(
+      var(--hud-frame-base-padding-top, var(--hud-frame-base-padding-y, 0px)) +
+      var(--hud-window-inset-top)
+    )
+    calc(
+      var(--hud-frame-base-padding-right, var(--hud-frame-base-padding-x, 0px)) +
+      var(--hud-window-inset-right)
+    )
+    calc(
+      var(--hud-frame-base-padding-bottom, var(--hud-frame-base-padding-y, 0px)) +
+      var(--hud-window-inset-bottom)
+    )
+    calc(
+      var(--hud-frame-base-padding-left, var(--hud-frame-base-padding-x, 0px)) +
+      var(--hud-window-inset-left)
+    ) !important;
+  background: transparent !important;
+}
+
+.hud-frame__window {
+  position: absolute;
+  z-index: -1;
+  top: var(--hud-window-inset-top);
+  right: var(--hud-window-inset-right);
+  bottom: var(--hud-window-inset-bottom);
+  left: var(--hud-window-inset-left);
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.resolution-popup[data-hud-frame] {
+  --hud-frame-base-padding-top: 16px;
+  --hud-frame-base-padding-right: 18px;
+  --hud-frame-base-padding-bottom: 14px;
+  --hud-frame-base-padding-left: 18px;
+}
+
+.global-lore-card[data-hud-frame] {
+  --hud-frame-base-padding-top: 13px;
+  --hud-frame-base-padding-right: 16px;
+  --hud-frame-base-padding-bottom: 15px;
+  --hud-frame-base-padding-left: 16px;
+}
+
+.resolution-popup[data-hud-frame] .resolution-popup__close {
+  top: calc(5px + var(--hud-window-inset-top));
+  right: calc(7px + var(--hud-window-inset-right));
+}
+
+.resolution-popup[data-hud-frame] .resolution-popup__flare {
+  top: var(--hud-window-inset-top);
+  bottom: var(--hud-window-inset-bottom);
+  left: var(--hud-window-inset-left);
+}
+
+/* Le PNG devient le contour visuel unique de la boîte extérieure. */
+[data-hud-frame].hud-frame {
+  border: 0 !important;
+  outline: 0 !important;
+}
+
+.resolution-popup[data-hud-frame] {
+  box-shadow:
+    0 0 30px rgba(79, 214, 255, 0.4),
+    inset 0 0 30px rgba(79, 214, 255, 0.08) !important;
+}
+
+.resolution-popup[data-hud-frame][data-result^="echec"] {
+  box-shadow: 0 0 30px rgba(255, 75, 103, 0.42) !important;
+}
+
+.resolution-popup[data-hud-frame][data-result="succes_critique"] {
+  box-shadow: 0 0 34px rgba(127, 230, 161, 0.46) !important;
+}
+
+.global-lore-card[data-hud-frame] {
+  box-shadow: 0 9px 28px rgba(0, 0, 0, 0.45) !important;
+}
+
+.hud-frame__graphics {
+  position: absolute;
+  z-index: 100;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hud-content {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  background: transparent;
+  pointer-events: auto;
+}
+
+/*
+ * Les intégrations manuelles avec .hud-content suivent la même géométrie que
+ * les cadres injectés par hud_frame.js.
+ */
+.hud-frame--clipped .hud-content,
+.hud-frame--overlay .hud-content {
+  inset:
+    var(--hud-window-inset-top)
+    var(--hud-window-inset-right)
+    var(--hud-window-inset-bottom)
+    var(--hud-window-inset-left);
+}
+
+.hud-frame--clipped .hud-content {
+  overflow: hidden;
+}
+
+.hud-frame--overlay .hud-content {
+  overflow: visible;
+}
+
+/*
+ * Option facultative pour un futur fill.png répétable.
+ * Exemple d'utilisation :
+ *   style="--hud-fill-image: url('../assets/image/cadre/fill.png')"
+ * Sans la classe et sans cette variable, le centre reste transparent.
+ */
+.hud-frame--textured .hud-content {
+  background-color: transparent;
+  background-image: var(--hud-fill-image, none);
+  background-repeat: repeat;
+  background-size: auto;
+}
+
+.hud-edge,
+.hud-corner,
+.hud-center {
+  position: absolute;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.hud-edge {
+  z-index: 2;
+  background-color: transparent;
+  /*
+   * Chaque espace reçoit un seul asset étiré dans l'axe de sa longueur :
+   * un edge complet sans centre, ou deux edges séparés autour du centre.
+   */
+}
+
+.hud-edge-top {
+  top: 0;
+  height: var(--hud-edge-top-height);
+  background-image: url("./images/cadre/edge_top.png");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.hud-edge-top--full {
+  right: calc(var(--hud-corner-tr-width) - var(--hud-edge-seam-overlap));
+  left: calc(var(--hud-corner-tl-width) - var(--hud-edge-seam-overlap));
+  display: none;
+  background-position: left top;
+}
+
+.hud-edge-top--start {
+  right: calc(
+    50% + var(--hud-center-half-width) - var(--hud-edge-seam-overlap)
+  );
+  left: calc(var(--hud-corner-tl-width) - var(--hud-edge-seam-overlap));
+  background-position: left top;
+}
+
+.hud-edge-top--end {
+  right: calc(var(--hud-corner-tr-width) - var(--hud-edge-seam-overlap));
+  left: calc(
+    50% + var(--hud-center-half-width) - var(--hud-edge-seam-overlap)
+  );
+  background-position: right top;
+}
+
+.hud-edge-bottom {
+  bottom: 0;
+  height: var(--hud-edge-bottom-height);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.hud-edge-bottom--start {
+  right: calc(
+    50% + var(--hud-center-half-width) - var(--hud-edge-seam-overlap)
+  );
+  left: calc(var(--hud-corner-bl-width) - var(--hud-edge-seam-overlap));
+  background-image: url("./images/cadre/edge_bottom_left.png");
+  background-position: left bottom;
+}
+
+.hud-edge-bottom--end {
+  right: calc(var(--hud-corner-br-width) - var(--hud-edge-seam-overlap));
+  left: calc(
+    50% + var(--hud-center-half-width) - var(--hud-edge-seam-overlap)
+  );
+  background-image: url("./images/cadre/edge_bottom_right.png");
+  background-position: right bottom;
+}
+
+.hud-edge-left {
+  top: calc(var(--hud-corner-tl-height) - var(--hud-edge-seam-overlap));
+  bottom: calc(var(--hud-corner-bl-height) - var(--hud-edge-seam-overlap));
+  left: 0;
+  width: var(--hud-edge-left-width);
+  background-image: url("./images/cadre/edge_left.png");
+  background-position: left top;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.hud-edge-right {
+  top: calc(var(--hud-corner-tr-height) - var(--hud-edge-seam-overlap));
+  right: 0;
+  bottom: calc(var(--hud-corner-br-height) - var(--hud-edge-seam-overlap));
+  width: var(--hud-edge-right-width);
+  background-image: url("./images/cadre/edge_right.png");
+  background-position: right top;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.hud-corner {
+  z-index: 3;
+  max-width: none;
+  max-height: none;
+}
+
+.hud-corner-tl {
+  top: 0;
+  left: 0;
+  width: var(--hud-corner-tl-width);
+  height: var(--hud-corner-tl-height);
+}
+
+.hud-corner-tr {
+  top: 0;
+  right: 0;
+  width: var(--hud-corner-tr-width);
+  height: var(--hud-corner-tr-height);
+}
+
+.hud-corner-bl {
+  bottom: 0;
+  left: 0;
+  width: var(--hud-corner-bl-width);
+  height: var(--hud-corner-bl-height);
+}
+
+.hud-corner-br {
+  right: 0;
+  bottom: 0;
+  width: var(--hud-corner-br-width);
+  height: var(--hud-corner-br-height);
+}
+
+.hud-center {
+  left: 50%;
+  z-index: 4;
+  width: var(--hud-center-width);
+  height: var(--hud-center-height);
+  max-width: none;
+  max-height: none;
+  transform: translateX(-50%);
+}
+
+.hud-center-top {
+  top: 0;
+}
+
+.hud-center-bottom {
+  bottom: 0;
+}
+
+/* Masquage explicite utile pour les formats étroits ou un scale très élevé. */
+.hud-frame--no-centers .hud-center {
+  display: none;
+}
+
+.hud-frame--no-centers .hud-edge-top--full {
+  display: block;
+}
+
+.hud-frame--no-centers .hud-edge-top--start,
+.hud-frame--no-centers .hud-edge-top--end {
+  display: none;
+}
+
+.hud-frame--no-centers .hud-edge-bottom--start {
+  right: calc(50% - var(--hud-edge-seam-overlap));
+}
+
+.hud-frame--no-centers .hud-edge-bottom--end {
+  left: calc(50% - var(--hud-edge-seam-overlap));
+}
+
+/*
+ * Sécurité responsive : sous 500 px, les modules centraux disparaissent au
+ * lieu d'être comprimés ou de chevaucher les coins. Les coins et les bords
+ * gardent leur épaisseur et leurs proportions.
+ */
+@container hud-frame (max-width: 500px) {
+  .hud-center {
+    display: none;
+  }
+
+  .hud-edge-top--full {
+    display: block;
+  }
+
+  .hud-edge-top--start,
+  .hud-edge-top--end {
+    display: none;
+  }
+
+  .hud-edge-bottom--start {
+    right: calc(50% - var(--hud-edge-seam-overlap));
+  }
+
+  .hud-edge-bottom--end {
+    left: calc(50% - var(--hud-edge-seam-overlap));
+  }
+}
